@@ -60,6 +60,7 @@ class DeleteGroup(OffsetWriter):
             cluster_config,
             client,
             storage=args.storage,
+            fail_on_error=False,
         )
         if args.storage == 'zookeeper':
             cls.delete_group_zk(cluster_config, args.groupid)

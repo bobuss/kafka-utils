@@ -148,12 +148,20 @@ class OffsetManagerBase(object):
                 topics = zk.get_my_subscribed_topics(groupid)
             except NoNodeError:
                 if fail_on_error:
-                    print(
-                        "Error: Consumer Group ID {groupid} does not exist.".format(
-                            groupid=groupid
-                        ),
-                        file=sys.stderr
-                    )
+                    if groupid not in zk.get_children("/consumers"):
+                        print(
+                            "Error: Consumer Group ID {groupid} does not exist.".format(
+                                groupid=groupid
+                            ),
+                            file=sys.stderr,
+                        )
+                    else:
+                        print(
+                            "Error: Offsets for Consumer Group ID {groupid} not found.".format(
+                                groupid=groupid
+                            ),
+                            file=sys.stderr,
+                        )
                     sys.exit(1)
         return topics
 
@@ -189,6 +197,17 @@ class OffsetWriter(OffsetManagerBase):
                 partitions,
                 client,
             )
+
+        if not topics_dict:
+            with ZK(cluster_config) as zk:
+                if groupid not in zk.get_children("/consumers"):
+                    print(
+                        "Error: Consumer Group ID {groupid} does not exist.".format(
+                            groupid=groupid
+                        ),
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
 
         topics_str = ""
         for local_topic, local_partitions in six.iteritems(topics_dict):
